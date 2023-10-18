@@ -2,3 +2,5 @@ aiohttp
 aiosqlite
 discord.py
 python-dotenv
+youtube_search
+pynacl

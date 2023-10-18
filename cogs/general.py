@@ -69,12 +69,12 @@ class General(commands.Cog, name="general"):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @commands.hybrid_command(
-        name="help", description="List all commands the bot has loaded."
+        name="ayuda", description="Todos los comando el bot."
     )
     async def help(self, context: Context) -> None:
         prefix = self.bot.config["prefix"]
         embed = discord.Embed(
-            title="Help", description="List of available commands:", color=0xBEBEFE
+            title="ayuda", description="Lista de los comandos disponibles del bot:", color=0xBEBEFE
         )
         for i in self.bot.cogs:
             if i == "owner" and not (await self.bot.is_owner(context.author)):
@@ -93,7 +93,7 @@ class General(commands.Cog, name="general"):
 
     @commands.hybrid_command(
         name="botinfo",
-        description="Get some useful (or not) information about the bot.",
+        description="Obten algo de información del bot.",
     )
     async def botinfo(self, context: Context) -> None:
         """
@@ -102,11 +102,11 @@ class General(commands.Cog, name="general"):
         :param context: The hybrid command context.
         """
         embed = discord.Embed(
-            description="Used [Krypton's](https://krypton.ninja) template",
+            description="Se ha utilizado [Krypton's](https://krypton.ninja) template",
             color=0xBEBEFE,
         )
-        embed.set_author(name="Bot Information")
-        embed.add_field(name="Owner:", value="Krypton#7331", inline=True)
+        embed.set_author(name="Información de SauroBot")
+        embed.add_field(name="Dueño:", value="Sauronato", inline=True)
         embed.add_field(
             name="Python Version:", value=f"{platform.python_version()}", inline=True
         )
@@ -115,7 +115,7 @@ class General(commands.Cog, name="general"):
             value=f"/ (Slash Commands) or {self.bot.config['prefix']} for normal commands",
             inline=False,
         )
-        embed.set_footer(text=f"Requested by {context.author}")
+        embed.set_footer(text=f"Solicitado por {context.author}")
         await context.send(embed=embed)
 
     @commands.hybrid_command(
@@ -160,7 +160,7 @@ class General(commands.Cog, name="general"):
         """
         embed = discord.Embed(
             title="🏓 Pong!",
-            description=f"The bot latency is {round(self.bot.latency * 1000)}ms.",
+            description=f"El ping del bot es {round(self.bot.latency * 1000)}ms.",
             color=0xBEBEFE,
         )
         await context.send(embed=embed)
@@ -176,12 +176,12 @@ class General(commands.Cog, name="general"):
         :param context: The hybrid command context.
         """
         embed = discord.Embed(
-            description=f"Invite me by clicking [here]({self.bot.config['invite_link']}).",
+            description=f"Inivitame pulsado aqui :right: [here]({self.bot.config['invite_link']}).",
             color=0xD75BF4,
         )
         try:
             await context.author.send(embed=embed)
-            await context.send("I sent you a private message!")
+            await context.send("Te he abierto el DM! :white_check_mark:")
         except discord.Forbidden:
             await context.send(embed=embed)
 
@@ -201,15 +201,15 @@ class General(commands.Cog, name="general"):
         )
         try:
             await context.author.send(embed=embed)
-            await context.send("I sent you a private message!")
+            await context.send("Te he abierto el DM! :white_check_mark:")
         except discord.Forbidden:
             await context.send(embed=embed)
 
     @commands.hybrid_command(
         name="8ball",
-        description="Ask any question to the bot.",
+        description="Pregunta algo al bot.",
     )
-    @app_commands.describe(question="The question you want to ask.")
+    @app_commands.describe(question="La pregunta que quieres hacer.")
     async def eight_ball(self, context: Context, *, question: str) -> None:
         """
         Ask any question to the bot.
@@ -218,38 +218,22 @@ class General(commands.Cog, name="general"):
         :param question: The question that should be asked by the user.
         """
         answers = [
-            "It is certain.",
-            "It is decidedly so.",
-            "You may rely on it.",
-            "Without a doubt.",
-            "Yes - definitely.",
-            "As I see, yes.",
-            "Most likely.",
-            "Outlook good.",
-            "Yes.",
-            "Signs point to yes.",
-            "Reply hazy, try again.",
-            "Ask again later.",
-            "Better not tell you now.",
-            "Cannot predict now.",
-            "Concentrate and ask again later.",
-            "Don't count on it.",
-            "My reply is no.",
-            "My sources say no.",
-            "Outlook not so good.",
-            "Very doubtful.",
+            "Si",
+            "No",
+            "Muerete",
+            "Mi primera chamba",
         ]
         embed = discord.Embed(
-            title="**My Answer:**",
+            title="**Mi respuesta es:**",
             description=f"{random.choice(answers)}",
             color=0xBEBEFE,
         )
-        embed.set_footer(text=f"The question was: {question}")
+        embed.set_footer(text=f"La pregunta es: {question}")
         await context.send(embed=embed)
 
     @commands.hybrid_command(
         name="bitcoin",
-        description="Get the current price of bitcoin.",
+        description="De que vas de criptobro o que.",
     )
     async def bitcoin(self, context: Context) -> None:
         """
@@ -268,13 +252,13 @@ class General(commands.Cog, name="general"):
                     )  # For some reason the returned content is of type JavaScript
                     embed = discord.Embed(
                         title="Bitcoin price",
-                        description=f"The current price is {data['bpi']['USD']['rate']} :dollar:",
+                        description=f"El precio actual es {data['bpi']['USD']['rate']} :dollar:",
                         color=0xBEBEFE,
                     )
                 else:
                     embed = discord.Embed(
                         title="Error!",
-                        description="There is something wrong with the API, please try again later",
+                        description="No funciona la mierda del bitcoin los webos",
                         color=0xE02B2B,
                     )
                 await context.send(embed=embed)

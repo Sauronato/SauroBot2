@@ -19,18 +19,18 @@ class Choice(discord.ui.View):
         super().__init__()
         self.value = None
 
-    @discord.ui.button(label="Heads", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="Cara", style=discord.ButtonStyle.blurple)
     async def confirm(
         self, button: discord.ui.Button, interaction: discord.Interaction
     ) -> None:
-        self.value = "heads"
+        self.value = "cara"
         self.stop()
 
-    @discord.ui.button(label="Tails", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="Cruz", style=discord.ButtonStyle.blurple)
     async def cancel(
         self, button: discord.ui.Button, interaction: discord.Interaction
     ) -> None:
-        self.value = "tails"
+        self.value = "cruz"
         self.stop()
 
 
@@ -38,17 +38,17 @@ class RockPaperScissors(discord.ui.Select):
     def __init__(self) -> None:
         options = [
             discord.SelectOption(
-                label="Scissors", description="You choose scissors.", emoji="✂"
+                label="Tijeras", description="Has seleccionado tijeras.", emoji="✂"
             ),
             discord.SelectOption(
-                label="Rock", description="You choose rock.", emoji="🪨"
+                label="Piedra", description="Has seleccionado piedra.", emoji="🪨"
             ),
             discord.SelectOption(
-                label="Paper", description="You choose paper.", emoji="🧻"
+                label="Papel", description="Has seleccionado papel.", emoji="🧻"
             ),
         ]
         super().__init__(
-            placeholder="Choose...",
+            placeholder="Selecciona...",
             min_values=1,
             max_values=1,
             options=options,
@@ -56,9 +56,9 @@ class RockPaperScissors(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         choices = {
-            "rock": 0,
-            "paper": 1,
-            "scissors": 2,
+            "piedra": 0,
+            "papel": 1,
+            "tijeras": 2,
         }
         user_choice = self.values[0].lower()
         user_choice_index = choices[user_choice]
@@ -73,13 +73,13 @@ class RockPaperScissors(discord.ui.Select):
 
         winner = (3 + user_choice_index - bot_choice_index) % 3
         if winner == 0:
-            result_embed.description = f"**That's a draw!**\nYou've chosen {user_choice} and I've chosen {bot_choice}."
+            result_embed.description = f"**Empate!**\nHas seleccionado {user_choice} y yo he elegido {bot_choice}."
             result_embed.colour = 0xF59E42
         elif winner == 1:
-            result_embed.description = f"**You won!**\nYou've chosen {user_choice} and I've chosen {bot_choice}."
+            result_embed.description = f"**Has ganado!**\nHas seleccionado {user_choice} y yo he elegido {bot_choice}."
             result_embed.colour = 0x57F287
         else:
-            result_embed.description = f"**You lost!**\nYou've chosen {user_choice} and I've chosen {bot_choice}."
+            result_embed.description = f"**Has perdido!**\nHas seleccionado {user_choice} y yo he elegido {bot_choice}."
             result_embed.colour = 0xE02B2B
 
         await interaction.response.edit_message(
@@ -97,7 +97,7 @@ class Fun(commands.Cog, name="fun"):
     def __init__(self, bot) -> None:
         self.bot = bot
 
-    @commands.hybrid_command(name="randomfact", description="Get a random fact.")
+    @commands.hybrid_command(name="randomfact", description="Toma un dato aleatorio.")
     async def randomfact(self, context: Context) -> None:
         """
         Get a random fact.
@@ -107,7 +107,7 @@ class Fun(commands.Cog, name="fun"):
         # This will prevent your bot from stopping everything when doing a web request - see: https://discordpy.readthedocs.io/en/stable/faq.html#how-do-i-make-a-web-request
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                "https://uselessfacts.jsph.pl/random.json?language=en"
+                "https://uselessfacts.jsph.pl/random.json?language=es"
             ) as request:
                 if request.status == 200:
                     data = await request.json()
@@ -115,13 +115,13 @@ class Fun(commands.Cog, name="fun"):
                 else:
                     embed = discord.Embed(
                         title="Error!",
-                        description="There is something wrong with the API, please try again later",
+                        description="La fuente de cosas inutiles no funciona, prueba en otro momento.",
                         color=0xE02B2B,
                     )
                 await context.send(embed=embed)
 
     @commands.hybrid_command(
-        name="coinflip", description="Make a coin flip, but give your bet before."
+        name="caracruz", description="Tira la moneda a ver que sale."
     )
     async def coinflip(self, context: Context) -> None:
         """
@@ -133,21 +133,21 @@ class Fun(commands.Cog, name="fun"):
         embed = discord.Embed(description="What is your bet?", color=0xBEBEFE)
         message = await context.send(embed=embed, view=buttons)
         await buttons.wait()  # We wait for the user to click a button.
-        result = random.choice(["heads", "tails"])
+        result = random.choice(["cara", "cruz"])
         if buttons.value == result:
             embed = discord.Embed(
-                description=f"Correct! You guessed `{buttons.value}` and I flipped the coin to `{result}`.",
+                description=f"Correcto! Has dicho `{buttons.value}` y la moneda ha salido `{result}`.",
                 color=0xBEBEFE,
             )
         else:
             embed = discord.Embed(
-                description=f"Woops! You guessed `{buttons.value}` and I flipped the coin to `{result}`, better luck next time!",
+                description=f"Vaya! Has dicho `{buttons.value}` y la moneda ha salido `{result}`!",
                 color=0xE02B2B,
             )
         await message.edit(embed=embed, view=None, content=None)
 
     @commands.hybrid_command(
-        name="rps", description="Play the rock paper scissors game against the bot."
+        name="pdt", description="(PeDeTe) Piedra papel o tijeras."
     )
     async def rock_paper_scissors(self, context: Context) -> None:
         """
@@ -156,7 +156,7 @@ class Fun(commands.Cog, name="fun"):
         :param context: The hybrid command context.
         """
         view = RockPaperScissorsView()
-        await context.send("Please make your choice", view=view)
+        await context.send("Hmmm... a ver como se te da esto. ", view=view)
 
 
 async def setup(bot) -> None:
