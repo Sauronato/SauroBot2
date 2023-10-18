@@ -6,3 +6,10 @@ CREATE TABLE IF NOT EXISTS `warns` (
   `reason` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS `servers` (
+  `id` VARCHAR(20) NOT NULL PRIMARY KEY,
+  `music_channel` VARCHAR(20) NOT NULL,
+  `music_message` VARCHAR(20) NOT NULL,
+  `music_role` VARCHAR(20) NOT NULL
+);

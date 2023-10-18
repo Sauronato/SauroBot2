@@ -8,12 +8,109 @@ Version: 6.1.0
 
 
 import aiosqlite
-
-
 class DatabaseManager:
     def __init__(self, *, connection: aiosqlite.Connection) -> None:
         self.connection = connection
+    
+    async def getMusicChannel(self, server_id: int) -> int:
+        rows = await self.connection.execute(
+            "SELECT music_channel FROM servers WHERE id=?",
+            (
+                server_id,
+            ),
+        )
+        async with rows as cursor:
+            result = await cursor.fetchone()
+            return result[0] if result is not None else 0
+    
+    async def getMusicChannels(self) -> {}:
+        rows = await self.connection.execute(
+            "SELECT id, music_channel FROM servers",
+        )
+        async with rows as cursor:
+            results = await cursor.fetchall()
+            music_channels = {}
+            for result in results:
+                server_id, channel_id = result
+                music_channels[server_id] = channel_id
+            return music_channels
+    
+    async def setMusicChannel(self, server_id: int, channel_id: int) -> None:
+        await self.connection.execute(
+            "UPDATE servers SET music_channel=? WHERE id=?",
+            (
+                channel_id,
+                server_id,
+            ),
+        )
+        await self.connection.commit()
+    
+    async def getMusicRole(self, server_id: int) -> int:
+        rows = await self.connection.execute(
+            "SELECT music_role FROM servers WHERE id=?",
+            (
+                server_id,
+            ),
+        )
+        async with rows as cursor:
+            result = await cursor.fetchone()
+            return result[0] if result is not None else 0
+    
+    async def setMusicRole(self, server_id: int, role_id: int) -> None:
+        await self.connection.execute(
+            "UPDATE servers SET music_role=? WHERE id=?",
+            (
+                role_id,
+                server_id,
+            ),
+        )
+        await self.connection.commit()
 
+    async def getMusicRoles(self) -> {}:
+        rows = await self.connection.execute(
+            "SELECT id, music_role FROM servers",
+        )
+        async with rows as cursor:
+            results = await cursor.fetchall()
+            music_roles = {}
+            for result in results:
+                server_id, role_id = result
+                music_roles[server_id] = role_id
+            return music_roles
+    
+    async def getMusicMessage(self, server_id: int) -> int:
+        rows = await self.connection.execute(
+            "SELECT music_message FROM servers WHERE id=?",
+            (
+                server_id,
+            ),
+        )
+        async with rows as cursor:
+            result = await cursor.fetchone()
+            return result[0] if result is not None else 0
+    
+    async def setMusicMessage(self, server_id: int, message_id: int) -> None:
+        await self.connection.execute(
+            "UPDATE servers SET music_message=? WHERE id=?",
+            (
+                message_id,
+                server_id,
+            ),
+        )
+        await self.connection.commit()
+
+    async def getMusicMessages(self) -> {}:
+        rows = await self.connection.execute(
+            "SELECT id, music_message FROM servers",
+        )
+        async with rows as cursor:
+            results = await cursor.fetchall()
+            music_messages = {}
+            for result in results:
+                server_id, message_id = result
+                music_messages[server_id] = message_id
+            return music_messages
+        
     async def add_warn(
         self, user_id: int, server_id: int, moderator_id: int, reason: str
     ) -> int:

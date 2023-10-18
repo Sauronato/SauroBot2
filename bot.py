@@ -202,7 +202,6 @@ class DiscordBot(commands.Bot):
         """
         statuses = ["Apuntar a jovenes!", "Amo por favor desconectame!", "Arrepintiendose de Vivir!"]
         await self.change_presence(activity=discord.Game(random.choice(statuses)))
-
     @status_task.before_loop
     async def before_status_task(self) -> None:
         """
