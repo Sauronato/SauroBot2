@@ -8,16 +8,21 @@ import youtube_dlc as youtube_dl
 # Crear una extensión separada para el reproductor de música
 # Define una vista personalizada que contiene los botones
 class MusicView(discord.ui.View):
-    def __init__(self):
+    def __init__(self,cog):
         super().__init__()
+        self.cog = cog
 
     @discord.ui.button(label="", custom_id="button-start", style=discord.ButtonStyle.primary, emoji="▶️") # the button has a custom_id set
-    async def start_button_callback(self, button, interaction):
-        await interaction.response.edit_message(view=self)
+    async def start_button_callback(self, interaction, button):
+        server_id = interaction.guild_id
+        await self.cog.start_stop(server_id)
+
 
     @discord.ui.button(label="", custom_id="button-skip", style=discord.ButtonStyle.primary, emoji="⏭️") # the button has a custom_id set
-    async def skip_button_callback(self, button, interaction):
-        await interaction.response.edit_message(view=self)
+    async def skip_button_callback(self, interaction, button):
+        server_id = interaction.guild_id
+        #Añadir la comprobación de permisos
+        await self.cog.skip(server_id)
 
 class MusicPlayer(commands.Cog, name="music"):
     def __init__(self, bot) -> None:
@@ -29,6 +34,27 @@ class MusicPlayer(commands.Cog, name="music"):
         self.play_message = {}  # Mensaje de información de la canción
         self.play_role = {}  # Rol para permitir a los usuarios pausar y reanudar la canción
         self.current_song = {}  # Información de la canción actual
+
+    async def start_stop(self, server_id):
+        if server_id in self.voice:
+            if self.voice[server_id].is_playing():
+                self.voice[server_id].pause()
+            else:
+                self.voice[server_id].resume()
+        else:
+            if len(self.queue[server_id]) > 0:
+                self.play_next(server_id)
+            else:
+                return
+
+    async def skip(self, server_id):
+        if server_id in self.voice:
+            self.voice[server_id].stop()
+            if len(self.queue[server_id]) > 0:
+                self.play_next(server_id)
+            else:
+                return
+
 
     @commands.hybrid_command(
             name="update",
@@ -58,6 +84,16 @@ class MusicPlayer(commands.Cog, name="music"):
             "thumbnail_url": "",
             "song_url": "",
         }
+    async def createSong(self,title, thumbnail_url, views, author, duration, video_url, requested_by):
+        return {
+            "title": title,
+            "thumbnail_url": thumbnail_url,
+            "views": views,
+            "author": author,
+            "duration": duration,
+            "song_url": video_url,
+            "requested_by": requested_by,
+        }
 
     async def create_music_embed(self, current_song, playlist):
         # Crear un objeto Embed
@@ -86,7 +122,7 @@ class MusicPlayer(commands.Cog, name="music"):
         # Manejar la interacción de botón
         if interaction.custom_id == "pause_button":
             await interaction.respond(content="Has presionado el botón de pausa.")
-        elif interaction.custom_id == "play_button":
+        elif interaction.custom_id == "button-start":
             await interaction.respond(content="Has presionado el botón de play.")
         elif interaction.custom_id == "skip_button":
             await interaction.respond(content="Has presionado el botón de skip.")
@@ -120,7 +156,7 @@ class MusicPlayer(commands.Cog, name="music"):
                 song = await self.getEmptySong()
                 music_embed = await self.create_music_embed(song, [])  # Sin información de la canción actual y una lista de reproducción vacía
 
-                music_view = MusicView()  # Crea una instancia de tu vista
+                music_view = MusicView(self)  # Crea una instancia de tu vista
 
                 # Agrega la vista al contenido del mensaje
                 music_embed.add_field(name="Controles", value="\u200B", inline=False)
@@ -188,27 +224,34 @@ class MusicPlayer(commands.Cog, name="music"):
     )
     async def play(self, context: Context, query: str):
         if context.guild is None:
-            await context.send("Este comando solo se puede utilizar en un servidor.")
+            await self.bot.autodeleteMessage(context,"Este comando solo se puede utilizar en un servidor.")
             return
-
         server_id = context.guild.id
+        if query == "":
+            await self.bot.autodeleteMessage(context,"Si no me das una canción mal vamos 👹.")
+            return
+        if server_id in self.play_channel and context.channel != self.bot.get_channel(self.play_channel[server_id]):
+            #Tu código aquí
+            await self.bot.autodeleteMessage(context,"Este comando solo se puede utilizar en el canal de lista de reproducción. 💡")
+            return
+        
         if server_id in self.voice:
             if not self.voice[server_id].is_connected():
                 if context.author.voice is not None:
                     self.voice[server_id] = await context.author.voice.channel.connect()
                 else:
-                    await context.send("You are not in a voice channel!")
+                    await self.bot.autodeleteMessage(context,"No estas en un canal de voz! 😠")
                     return
         else:
              if context.author.voice is not None:
                 if server_id in self.voice:
                     # Verificar si ya está conectado a un canal en el servidor
-                    await context.send("I'm already in a voice channel in this server.")
+                    await self.bot.autodeleteMessage(context,"Estoy ocupado, espera que dejen de usar 😅.")
                 else:
                     self.voice[server_id] = await context.author.voice.channel.connect()
                     self.queue[server_id] = []
              else:
-                await context.send("You are not in a voice channel!")
+                await self.bot.autodeleteMessage(context,"No estas en un canal de voz! 😠")
                 return
 
 
@@ -222,14 +265,17 @@ class MusicPlayer(commands.Cog, name="music"):
             video_info = results[0]
             title = video_info["title"]
             views = video_info["views"]
+            author = video_info["channel"]
+            duration = video_info["duration"]
+            requested_by = context.author.name
 
-            # Mensaje de información de la canción
-            info_message = f"**Canción solicitada por {context.author.mention}**\n\n" \
-                        f"**Título:** {title}\n" \
-                        f"**Vistas:** {views}\n" \
-                        f"**Enlace:** {video_url}"
+            # Obtener la imagen de la portada del video
+            thumbnail = video_info["thumbnails"][0]
+            thumbnail_url = thumbnail["url"]
 
-            await context.send(info_message)
+            # Crear un objeto Song
+            song = await self.createSong(title, thumbnail_url, views, author, duration, video_url, requested_by)
+            
 
             # Descargar y agregar a la lista de reproducción
             ydl_opts = {

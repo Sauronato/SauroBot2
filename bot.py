@@ -257,6 +257,10 @@ class DiscordBot(commands.Bot):
                 f"Ejecución de {executed_command} comando en {context.author} (ID: {context.author.id}) en DMs"
             )
 
+    async def autodeleteMessage(self, context: Context, query) -> None:
+        message = await context.send(query)
+        await message.delete(delay=10)
+
     async def on_command_error(self, context: Context, error) -> None:
         """
         The code in this event is executed every time a normal valid command catches an error.
