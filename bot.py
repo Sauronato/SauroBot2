@@ -6,6 +6,7 @@ Description:
 Version: 6.1.0
 """
 
+import asyncio
 import json
 import logging
 import os
@@ -168,6 +169,7 @@ class DiscordBot(commands.Bot):
         self.logger = logger
         self.config = config
         self.database = None
+        self.loop = asyncio.get_event_loop()
 
     async def init_db(self) -> None:
         async with aiosqlite.connect(
@@ -258,7 +260,11 @@ class DiscordBot(commands.Bot):
             )
 
     async def autodeleteMessage(self, context: Context, query) -> None:
-        message = await context.send(query)
+        embed = discord.Embed(
+            description=query,
+            color=0xE02B2B,
+        )
+        message = await context.send(embed=embed)
         await message.delete(delay=10)
 
     async def on_command_error(self, context: Context, error) -> None:
