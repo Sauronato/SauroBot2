@@ -12,6 +12,50 @@ class DatabaseManager:
     def __init__(self, *, connection: aiosqlite.Connection) -> None:
         self.connection = connection
     
+    async def get_info_servers(self) -> int:
+        rows = await self.connection.execute(
+            "SELECT COUNT(*) FROM servers",
+        )
+        async with rows as cursor:
+            result = await cursor.fetchone()
+            return result[0] if result is not None else 0
+        
+    async def get_info_server(self, server_id: int) -> {}:
+        rows = await self.connection.execute(
+            "SELECT * FROM servers WHERE id=?",
+            (
+                server_id,
+            ),
+        )
+        async with rows as cursor:
+            result = await cursor.fetchone()
+            return result if result is not None else 0
+        
+
+    async def add_server(self, server_id: int) -> None:
+        """
+        This function will add a server to the database.
+
+        :param server_id: The ID of the server.
+        """
+        rows = await self.connection.execute(
+            "SELECT id FROM servers WHERE id=?",
+            (
+                server_id,
+            ),
+        )
+        if rows is None:
+            print(f"Adding server {server_id} to the database.")
+            await self.connection.execute(
+                "INSERT INTO servers VALUES (?)",
+                (
+                    server_id,
+                ),
+            )
+            await self.connection.commit()
+        else:
+            print(f"Server {server_id} already exists in the database.")
+    
     async def getMusicChannel(self, server_id: int) -> int:
         rows = await self.connection.execute(
             "SELECT music_channel FROM servers WHERE id=?",
@@ -33,17 +77,21 @@ class DatabaseManager:
             for result in results:
                 server_id, channel_id = result
                 music_channels[server_id] = channel_id
+            print ("Canales encontrados:")
+            for i in music_channels:
+                print (i+"\n")
             return music_channels
     
     async def setMusicChannel(self, server_id: int, channel_id: int) -> None:
-        await self.connection.execute(
-            "UPDATE servers SET music_channel=? WHERE id=?",
-            (
-                channel_id,
-                server_id,
-            ),
-        )
-        await self.connection.commit()
+            result = await self.connection.execute(
+            "UPDATE servers SET music_channel = ? WHERE id = ?",
+            (channel_id, server_id)
+            )
+            if result is None:
+                print (f"Server {server_id} does not exist in the database.")
+            else:
+                print(f"Updating channel {channel_id} in {server_id} on the database.")
+            await self.connection.commit()
     
     async def getMusicRole(self, server_id: int) -> int:
         rows = await self.connection.execute(

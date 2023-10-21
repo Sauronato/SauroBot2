@@ -32,7 +32,7 @@ class MusicView(discord.ui.View):
         except:
             pass
 
-    @discord.ui.button(label="", custom_id="button-exit", style=discord.ButtonStyle.primary, emoji="⏏️") # the button has a custom_id set
+    @discord.ui.button(label="", custom_id="button-exit", style=discord.ButtonStyle.danger, emoji="◻️") # the button has a custom_id set
     async def exit_button_callback(self, interaction, button):
         server_id = interaction.guild_id
         #Añadir la comprobación de permisos
@@ -53,39 +53,68 @@ class MusicPlayer(commands.Cog, name="music"):
         self.play_role = {}  # Rol para permitir a los usuarios pausar y reanudar la canción
         self.current_song = {}  # Información de la canción actual
         self.music_view = {} #Vista de los botones de musica
-        self.play_channel[721752348443017237] = 1164259244904824862
-        self.play_message[721752348443017237] = 1164722172636450927 
-        self.queue[721752348443017237] = []
-        self.voice[721752348443017237] = None
+        self.initializated = False
+    
+    async def initialize(self):
+        #Revisar canales guardados en al base de datos
+        canales = await self.bot.database.getMusicChannels()
+        for canal in canales:
+            self.play_channel[canal[0]] = canal[1]
+        #Revisar mensajes guardados en al base de datos
+        mensajes = await self.bot.database.getMusicMessages()
+        for mensaje in mensajes:
+            self.play_message[mensaje[0]] = mensaje[1]
+        #Revisar roles guardados en al base de datos
+        roles = await self.bot.database.getMusicRoles()
+        for rol in roles:
+            self.play_role[rol[0]] = rol[1]
+        self.initializated = True
 
     async def start_stop(self, server_id):
         if server_id in self.voice:
+            if self.initializated == False:
+                await self.initialize()
             if self.voice[server_id].is_playing():
                 self.voice[server_id].pause()
+                play_channel = self.bot.get_channel(self.play_channel[server_id])
+                self.bot.autodeleteMessage(play_channel, "Canción pausada ⏸️")
                 #self.is_running = not self.is_running
             else:
                 self.voice[server_id].resume()
+                play_channel = self.bot.get_channel(self.play_channel[server_id])
+                self.bot.autodeleteMessage(play_channel, "Canción reanudada ▶️")
                 #self.is_running = not self.is_running
         else:
-            if server_id in self.queue and self.queue[server_id] is not None and len(self.queue[server_id]) > 0:
-                self.play_next(server_id)
-                #self.is_running = not self.is_running
+            if server_id in self.queue and len(self.queue[server_id]) == 0:
+                play_channel = self.bot.get_channel(self.play_channel[server_id])
+                self.bot.autodeleteMessage(play_channel, "Comenzando a reproducir 🎶")
+                await self.play_next(server_id)
+
+                #self.is_running = not self.is_runnings
             else:
                 play_channel = self.bot.get_channel(self.play_channel[server_id])
-                await self.bot.autodeleteMessage(play_channel, "No hay canciones en la lista de reproducción. Agrega canciones con el comando `/play`")
+                await self.bot.autodeleteMessage(play_channel, "No hay canciones en la lista de reproducción. 😞 Agrega canciones con el comando `/play`")
         
 
     async def skip(self, server_id):
         if server_id in self.voice:
+            if self.initializated == False:
+                await self.initialize()
             self.voice[server_id].stop()
             if len(self.queue[server_id]) > 0:
+                play_channel = self.bot.get_channel(self.play_channel[server_id])
+                self.bot.autodeleteMessage(play_channel, "Saltando canción 🤸")
                 self.play_next(server_id)
                 #self.is_running = not self.is_running
             else:
                 return
     async def exit(self, server_id):
-        if server_id in self.voice:
+        if self.initializated == False:
+            await self.initialize()
+        if server_id in self.voice and self.voice[server_id] is not None:
             await self.voice[server_id].disconnect()
+            play_channel = self.bot.get_channel(self.play_channel[server_id])
+            await self.bot.autodeleteMessage(play_channel, "¡Bye! Me fui 🌬️")
             self.voice[server_id] = None
             self.queue[server_id].clear()
             self.current_song[server_id] = None
@@ -99,17 +128,23 @@ class MusicPlayer(commands.Cog, name="music"):
             description="Actualiza la base de datos.",
     )
     async def show_settings(self, context: Context):
+        if self.initializated == False:
+            await self.initialize()
         try:
             # Obtener valores de las listas
             music_channels = self.play_channel
             music_messages = self.play_message
             music_roles = self.play_role
+            music_voice = self.voice
             
             # Crear un mensaje con los contenidos de las listas
             message = "Configuración actual:\n"
+            message += f"Inizializado: {self.initializated}\n"
             message += f"Canal de música: {music_channels}\n"
             message += f"Mensaje de música: {music_messages}\n"
             message += f"Rol de música: {music_roles}\n"
+            message += f"Voz de música: {music_voice}\n"
+            message += f"Info en BD: {await self.bot.database.get_info_server(721752348443017237)}\n"
             
             await context.send(message)
         except Exception as e:
@@ -163,26 +198,18 @@ class MusicPlayer(commands.Cog, name="music"):
         embed.set_image(url=current_song["thumbnail_url"])
 
         # Crear una lista de canciones en la lista de reproducción
-        playlist_text = "\n".join([f"{i + 1}. {song['title']}" for i, song in enumerate(playlist)])
+        playlist_text = "\n".join([f"{i + 1}. {song['title']} - <@{current_song['requested_by']}>" for i, song in enumerate(playlist)])
         embed.add_field(name="Lista de Reproducción", value=playlist_text, inline=False)
 
         return embed
-
-    @commands.Cog.listener()
-    async def on_button_click(self, interaction):
-        # Manejar la interacción de botón
-        if interaction.custom_id == "pause_button":
-            await interaction.respond(content="Has presionado el botón de pausa.")
-        elif interaction.custom_id == "button-start":
-            await interaction.respond(content="Has presionado el botón de play.")
-        elif interaction.custom_id == "skip_button":
-            await interaction.respond(content="Has presionado el botón de skip.")
 
     @commands.hybrid_command(
         name="setchannel",
         description="Asigna un canal para reproducir las canciones.",
     )
     async def setchannel(self, context: Context):
+        if self.initializated == False:
+            await self.initialize()
         if context.guild is None:
             await context.send("Este comando solo se puede utilizar en un servidor.")
             return
@@ -190,6 +217,7 @@ class MusicPlayer(commands.Cog, name="music"):
 
         # Verifica si el usuario que ejecutó el comando es un administrador
         if context.author.guild_permissions.administrator:
+            await self.bot.database.add_server(server_id)
             self.play_channel[server_id] = context.channel.id  # Usar el ID del canal, no la mención
             await  self.bot.database.setMusicChannel(server_id, context.channel.id)
             await context.send(f'Canal de lista de reproducción establecido en {context.channel.mention}')
@@ -211,13 +239,13 @@ class MusicPlayer(commands.Cog, name="music"):
                 self.music_view[server_id] = music_view
                 # Agrega la vista al contenido del mensaje
                 music_embed.add_field(name="Controles", value="\u200B", inline=False)
-                await context.send(embed=music_embed, view=self.music_view[server_id])
+                message = await context.send(embed=music_embed, view=self.music_view[server_id])
 
                 # Puedes guardar el ID del mensaje si es necesario
                 self.play_message[server_id] = message.id
+                await self.bot.database.setMusicMessage(server_id, message.id)
                 self.queue[server_id] = []
                 self.voice[server_id] = None
-                await self.bot.database.setMusicMessage(server_id, message.id)
 
             else:
                 await context.send('No se pudo encontrar el canal de lista de reproducción.')
@@ -226,6 +254,8 @@ class MusicPlayer(commands.Cog, name="music"):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if self.initializated == False:
+            await self.initialize()
         playlist_channel = None
         playlist_message = None
         # Verifica si el mensaje es de un servidor
@@ -275,10 +305,12 @@ class MusicPlayer(commands.Cog, name="music"):
 
 
     @commands.hybrid_command(
-        name="playe",
-        description="Play a YouTube video in the voice channel.",
+        name="play",
+        description="Reproduce una canción de Youtube.",
     )
-    async def play(self, context: Context, query: str):
+    async def play(self, context: Context, cancion: str):
+        if self.initializated == False:
+            await self.initialize()
         if context.guild is None:
             await self.bot.autodeleteMessage(context, "Este comando solo se puede utilizar en un servidor.")
         else:
@@ -289,17 +321,17 @@ class MusicPlayer(commands.Cog, name="music"):
                 await self.bot.autodeleteMessage(context, "No se ha configurado ningún canal de lista de reproducción. 😢")
                 return
             if context.channel != play_channel:
-                await self.bot.autodeleteMessage(context, "Este comando solo se puede utilizar en el canal de lista de reproducción. 💡")
+                await self.bot.autodeleteMessage(context, f"Este comando solo se puede utilizar en el canal <#{play_channel.id}> 💡")
                 return
             elif context.author.voice is None:
                 await self.bot.autodeleteMessage(context, "No estás en un canal de voz. 👹")
                 return
-            elif query == "":
+            elif cancion == "":
                 await self.bot.autodeleteMessage(context, "Si no me das una canción, mal vamos 👹")
                 return
             elif server_id in self.voice:
                     if self.voice[server_id] is not None and self.voice[server_id].is_connected() and context.author.voice.channel.id != self.voice[server_id].channel.id:
-                        await self.bot.autodeleteMessage(context, "🎉 ¡Estamos de fiesta en otro canal! ¿No vienes o no puedes? 🤨")
+                        await self.bot.autodeleteMessage(context, "🎉 ¡Estamos de fiesta en otro canal! 🤨 ¿No vienes o no puedes? 🤫 ")
                         return
                     else:
                         if self.voice[server_id] == None:
@@ -310,7 +342,7 @@ class MusicPlayer(commands.Cog, name="music"):
         send_message = await context.send("Buscando canción...")
 
     # Utilizar youtube-search-python para buscar el video
-        results = YoutubeSearch(query, max_results=1).to_dict()
+        results = YoutubeSearch(cancion, max_results=1).to_dict()
         id = -1
         if results:
             #Se queda con el primer id que tenga mas de 0 de duración
@@ -373,6 +405,8 @@ class MusicPlayer(commands.Cog, name="music"):
             #await send_message.delete()
 
     async def play_next(self, server_id):
+        if self.initializated == False:
+            await self.initialize()
         if len(self.queue[server_id]) > 0:
             song = self.queue[server_id][0]
             source = song["source"]
@@ -438,6 +472,7 @@ class MusicPlayer(commands.Cog, name="music"):
 # Agrega la extensión al bot
 async def setup(bot) -> None:
     await bot.add_cog(MusicPlayer(bot))
+
 
 
 
