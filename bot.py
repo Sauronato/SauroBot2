@@ -259,13 +259,17 @@ class DiscordBot(commands.Bot):
                 f"Ejecución de {executed_command} comando en {context.author} (ID: {context.author.id}) en DMs"
             )
 
-    async def autodeleteMessage(self, context: Context, query) -> None:
+    async def autodeleteMessage(self, context: Context, query, time=10, color=0xE02B2B) -> discord.Embed:
         embed = discord.Embed(
             description=query,
-            color=0xE02B2B,
+            color=color,
         )
         message = await context.send(embed=embed)
-        await message.delete(delay=10)
+        try:
+            await message.delete(delay=time)
+        except:
+            pass
+        return message
 
     async def on_command_error(self, context: Context, error) -> None:
         """

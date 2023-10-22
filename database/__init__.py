@@ -29,6 +29,9 @@ class DatabaseManager:
         )
         async with rows as cursor:
             result = await cursor.fetchone()
+            for row in result:
+                print (row)
+                print (type(row))
             return result if result is not None else 0
         
 
@@ -44,30 +47,33 @@ class DatabaseManager:
                 server_id,
             ),
         )
-        if rows is None:
-            print(f"Adding server {server_id} to the database.")
-            await self.connection.execute(
-                "INSERT INTO servers VALUES (?)",
-                (
-                    server_id,
-                ),
-            )
-            await self.connection.commit()
-        else:
-            print(f"Server {server_id} already exists in the database.")
+        async with rows as cursor:
+            result = await cursor.fetchone()
+            print(result)
+            if result is None:
+                print(f"Adding server {server_id} to the database.")
+                await self.connection.execute(
+                    "INSERT INTO servers VALUES (?,NULL,NULL,NULL)",
+                    (
+                        server_id,
+                    ),
+                )
+                await self.connection.commit()
+            else:
+                print(f"Server {server_id} already exists in the database.")
     
-    async def getMusicChannel(self, server_id: int) -> int:
+    async def getMusicChannel(self, server_id: int) -> {int, int}:
         rows = await self.connection.execute(
-            "SELECT music_channel FROM servers WHERE id=?",
+            "SELECT id, music_channel FROM servers WHERE id=?",
             (
                 server_id,
             ),
         )
         async with rows as cursor:
             result = await cursor.fetchone()
-            return result[0] if result is not None else 0
+            return result if result is not None else 0
     
-    async def getMusicChannels(self) -> {}:
+    async def getMusicChannels(self) -> {int, int}:
         rows = await self.connection.execute(
             "SELECT id, music_channel FROM servers",
         )
@@ -76,10 +82,8 @@ class DatabaseManager:
             music_channels = {}
             for result in results:
                 server_id, channel_id = result
-                music_channels[server_id] = channel_id
-            print ("Canales encontrados:")
-            for i in music_channels:
-                print (i+"\n")
+                server_id = int(server_id)
+                music_channels[server_id] = int(channel_id)
             return music_channels
     
     async def setMusicChannel(self, server_id: int, channel_id: int) -> None:
@@ -102,7 +106,7 @@ class DatabaseManager:
         )
         async with rows as cursor:
             result = await cursor.fetchone()
-            return result[0] if result is not None else 0
+            return result if result is not None else 0
     
     async def setMusicRole(self, server_id: int, role_id: int) -> None:
         await self.connection.execute(
@@ -114,7 +118,7 @@ class DatabaseManager:
         )
         await self.connection.commit()
 
-    async def getMusicRoles(self) -> {}:
+    async def getMusicRoles(self) -> {int, int}:
         rows = await self.connection.execute(
             "SELECT id, music_role FROM servers",
         )
@@ -122,6 +126,7 @@ class DatabaseManager:
             results = await cursor.fetchall()
             music_roles = {}
             for result in results:
+                print (result)
                 server_id, role_id = result
                 music_roles[server_id] = role_id
             return music_roles
@@ -135,7 +140,7 @@ class DatabaseManager:
         )
         async with rows as cursor:
             result = await cursor.fetchone()
-            return result[0] if result is not None else 0
+            return result if result is not None else 0
     
     async def setMusicMessage(self, server_id: int, message_id: int) -> None:
         await self.connection.execute(
@@ -147,7 +152,7 @@ class DatabaseManager:
         )
         await self.connection.commit()
 
-    async def getMusicMessages(self) -> {}:
+    async def getMusicMessages(self) -> {int, int}:
         rows = await self.connection.execute(
             "SELECT id, music_message FROM servers",
         )

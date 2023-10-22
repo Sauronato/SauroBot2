@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS `warns` (
 );
 
 CREATE TABLE IF NOT EXISTS `servers` (
-  `id` VARCHAR(20) NOT NULL PRIMARY KEY,
-  `music_channel` VARCHAR(20) NOT NULL,
-  `music_message` VARCHAR(20) NOT NULL,
-  `music_role` VARCHAR(20) NOT NULL
+  `id` int(20) NOT NULL PRIMARY KEY,
+  `music_channel` INT(20),
+  `music_message` INT(20),
+  `music_role` INT(20)
 );
