@@ -363,9 +363,8 @@ class MusicPlayer(commands.Cog, name="music"):
             results = YoutubeSearch(cancion, max_results=1).to_dict()
             id = -1
             if results:
-                print(result["title"])
                 #Se queda con el primer id que tenga mas de 0 de duración
-                
+            
                 for i, result in enumerate(results):
                     duration = result["duration"]
 
