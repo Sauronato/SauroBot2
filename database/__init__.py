@@ -49,7 +49,6 @@ class DatabaseManager:
         )
         async with rows as cursor:
             result = await cursor.fetchone()
-            print(result)
             if result is None:
                 print(f"Adding server {server_id} to the database.")
                 await self.connection.execute(

@@ -390,6 +390,7 @@ class MusicPlayer(commands.Cog, name="music"):
                 title = video_info["title"]
                 duration = video_info["duration"]
                 embed = discord.Embed(
+                    title=f"Canción: {title}",
                     description=f"De **[{video_info['channel']}]({video_url})** dura `{duration}`\n",
                     color=0x66FF66  # Color verde
                 )
