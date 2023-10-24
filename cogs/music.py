@@ -16,7 +16,7 @@ class MusicView(discord.ui.View):
     @discord.ui.button(label="", custom_id="button-start", style=discord.ButtonStyle.primary, emoji="▶️") # the button has a custom_id set
     async def start_button_callback(self, interaction, button):
         server_id = interaction.guild_id
-        await self.cog.start_stop(server_id)
+        await self.cog.start_stop(server_id, interaction)
         try:
             await interaction.response.defer()
         except:
@@ -26,7 +26,7 @@ class MusicView(discord.ui.View):
     async def skip_button_callback(self, interaction, button):
         server_id = interaction.guild_id
         #Añadir la comprobación de permisos
-        await self.cog.skip(server_id)
+        await self.cog.skip(server_id,interaction)
         try:
             await interaction.response.defer()
         except:
@@ -36,7 +36,7 @@ class MusicView(discord.ui.View):
     async def exit_button_callback(self, interaction, button):
         server_id = interaction.guild_id
         #Añadir la comprobación de permisos
-        await self.cog.exit(server_id)
+        await self.cog.exit(server_id, interaction)
         try:
             await interaction.response.defer()
         except:
@@ -73,7 +73,7 @@ class MusicPlayer(commands.Cog, name="music"):
         self.bot.logger.info("MusicPlayer initialized")
         self.initializated = True
 
-    async def start_stop(self, server_id):
+    async def start_stop(self, server_id, interaction):
         if server_id in self.voice:
             if self.initializated == False:
                 await self.initialize()
@@ -82,17 +82,17 @@ class MusicPlayer(commands.Cog, name="music"):
             if self.voice[server_id].is_playing():
                 self.voice[server_id].pause()
                 play_channel = self.bot.get_channel(self.play_channel[server_id])
-                self.bot.autodeleteMessage(play_channel, "Canción pausada ⏸️",5,0x3498DB)
+                self.bot.autodeleteMessage(play_channel, f"Canción pausada ⏸️ - <@{interaction.user}>",5,0x3498DB)
                 #self.is_running = not self.is_running
             else:
                 self.voice[server_id].resume()
                 play_channel = self.bot.get_channel(self.play_channel[server_id])
-                self.bot.autodeleteMessage(play_channel, "Canción reanudada ▶️",5,0x3498DB)
+                self.bot.autodeleteMessage(play_channel, "Canción reanudada ▶️ - <@{interaction.user}>",5,0x3498DB)
                 #self.is_running = not self.is_running
         else:
             if server_id in self.queue and len(self.queue[server_id]) == 0:
                 play_channel = self.bot.get_channel(self.play_channel[server_id])
-                self.bot.autodeleteMessage(play_channel, "Comenzando a reproducir 🎶",5,0x3498DB)
+                self.bot.autodeleteMessage(play_channel, "Comenzando a reproducir 🎶 - <@{interaction.user}>",5,0x3498DB)
                 await self.play_next(server_id)
 
                 #self.is_running = not self.is_runnings
@@ -113,7 +113,7 @@ class MusicPlayer(commands.Cog, name="music"):
                 return
             if len(self.queue[server_id]) > 0:
                 play_channel = self.bot.get_channel(self.play_channel[server_id])
-                await self.bot.autodeleteMessage(play_channel, "Saltando canción 🤸",5,0x3498DB)
+                await self.bot.autodeleteMessage(play_channel, "Saltando canción 🤸 - <@{interaction.user}>",5,0x3498DB)
                 await self.play_next(server_id)
                 #self.is_running = not self.is_running
             else:
@@ -124,7 +124,7 @@ class MusicPlayer(commands.Cog, name="music"):
         if server_id in self.voice and self.voice[server_id] is not None:
             await self.voice[server_id].disconnect()
             play_channel = self.bot.get_channel(self.play_channel[server_id])
-            await self.bot.autodeleteMessage(play_channel, "¡Bye! Me fui 🌬️")
+            await self.bot.autodeleteMessage(play_channel, "¡Bye! Me fui 🌬️ - <@{interaction.user}>")
             self.voice[server_id] = None
             self.queue[server_id].clear()
             self.current_song[server_id] = None
@@ -396,6 +396,10 @@ class MusicPlayer(commands.Cog, name="music"):
                 )
                 await send_message.edit(embed=embed)
                 views = video_info["views"]
+                # Primero, elimina la parte "Aufrufe" usando el método replace:
+                views = views.replace("Aufrufe", "")
+                # Luego, agrega "visitas" al final de la cadena:
+                views += " visitas"
                 author = video_info["channel"]
                 author_url = f"https://www.youtube.com/@{video_info['channel']}"
 
