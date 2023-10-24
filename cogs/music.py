@@ -359,7 +359,15 @@ class MusicPlayer(commands.Cog, name="music"):
         
             send_message = await self.bot.autodeleteMessage(context,"Buscando canción... 🔎",40,0x3498DB)
 
-        # Utilizar youtube-search-python para buscar el video  FALTAN LAS PLAYLIST
+            if cancion.startswith("https://www.youtube.com/watch?v="):
+                if("&" in cancion):
+                    index = cancion.find("&")
+
+                    # Si se encuentra "&", elimina todo lo que está después de él
+                    if index != -1:
+                        cancion = cancion[:index]
+                    else:
+                        cancion = cancion  # Si no se encuentra "&", la URL permanece sin cambios
             results = YoutubeSearch(cancion, max_results=1).to_dict()
             id = -1
             if results:
