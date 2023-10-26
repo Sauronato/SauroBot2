@@ -427,7 +427,7 @@ class MusicPlayer(commands.Cog, name="music"):
                 url2 = audio_stream.url
                 print(url2)
                 audio_path = audio_stream.download(output_path="audio", filename=video_id)
-                source = discord.FFmpegPCMAudio(audio_stream)
+                source = discord.FFmpegPCMAudio(audio_path)
                 song = await self.createSong(title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source, audio_path)
                 for i, song_act in enumerate(self.queue[server_id]):
                     if song_act["title"] == title:
