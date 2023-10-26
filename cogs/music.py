@@ -434,6 +434,9 @@ class MusicPlayer(commands.Cog, name="music"):
                 await send_message.edit(embed=embed)
                 views = video_info["views"]
                 # Primero, elimina la parte "Aufrufe" usando el método replace:
+                views = views.replace("Aufrufe", "")
+                # Luego, agrega "visitas" al final de la cadena:
+                views += "visitas"
                 author = video_info["channel"]
                 author_url = f"https://www.youtube.com/@{video_info['channel']}"
 
