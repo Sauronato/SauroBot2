@@ -6,6 +6,8 @@ from youtube_search import YoutubeSearch
 import youtube_dlc as youtube_dl
 from pytube import YouTube
 import os
+import subprocess
+import io
 
 # Crear una extensión separada para el reproductor de música
 # Define una vista personalizada que contiene los botones
@@ -325,6 +327,29 @@ class MusicPlayer(commands.Cog, name="music"):
                 voice_client.disconnect()
                 self.initializated = True
 
+    async def descargar_audio(self, video_url, audio_file_path):
+        print(video_url)
+        print(audio_file_path)
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'opus',
+                'preferredquality': '192',
+            }],
+            'outtmpl': audio_file_path,
+        }
+
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=False)
+            audio_url = info['url']
+        ffmpeg_cmd = [
+        'ffmpeg',
+        '-i', audio_url,
+        '-f', 'opus', '-',  # La salida se redirige a la tubería estándar
+        ]
+        process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return process.stdout
 
 
     @commands.hybrid_command(
@@ -409,9 +434,6 @@ class MusicPlayer(commands.Cog, name="music"):
                 await send_message.edit(embed=embed)
                 views = video_info["views"]
                 # Primero, elimina la parte "Aufrufe" usando el método replace:
-                views = views.replace("Aufrufe", "")
-                # Luego, agrega "visitas" al final de la cadena:
-                views += "visitas"
                 author = video_info["channel"]
                 author_url = f"https://www.youtube.com/@{video_info['channel']}"
 
@@ -419,16 +441,27 @@ class MusicPlayer(commands.Cog, name="music"):
 
                 # Obtener la imagen de la portada del video
                 thumbnail_url = video_info["thumbnails"][0]
+                audio_file_path = f"./audio/{video_id}.opus"
+                ydl_opts = {
+                    'format': 'bestaudio/best',
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'opus',
+                        'preferredquality': '192',
+                    }],
+                    'outtmpl': audio_file_path,
+                }
+
+                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(video_url, download=False)
+                    audio_url = info['url']
 
                 # Descargar y agregar a la lista de reproducción
-                
-                yt = YouTube(video_url)
-                audio_stream = yt.streams.filter(only_audio=True).first()
-                url2 = audio_stream.url
-                print(url2)
-                audio_path = audio_stream.download(output_path="audio", filename=video_id)
-                source = discord.FFmpegPCMAudio(audio_path)
-                song = await self.createSong(title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source, audio_path)
+                # Inicia la tarea de descarga
+                #audio_stream = await self.descargar_audio(video_url, audio_file_path)
+            
+                source = discord.FFmpegPCMAudio(audio_url, before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5")
+                song = await self.createSong(title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source, audio_file_path)
                 for i, song_act in enumerate(self.queue[server_id]):
                     if song_act["title"] == title:
 
