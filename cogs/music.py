@@ -134,6 +134,7 @@ class MusicPlayer(commands.Cog, name="music"):
                 archivo_path = os.path.join("audio", archivo)
                 if os.path.isfile(archivo_path):
                     os.remove(archivo_path)
+                    #S
             await self.updateSong(server_id)
         else:
             return
