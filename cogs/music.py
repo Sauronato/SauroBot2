@@ -130,10 +130,6 @@ class MusicPlayer(commands.Cog, name="music"):
             self.voice[server_id] = None
             self.queue[server_id].clear()
             self.current_song[server_id] = None
-            for archivo in os.listdir("audio"):
-                archivo_path = os.path.join("audio", archivo)
-                if os.path.isfile(archivo_path):
-                    os.remove(archivo_path)
             await self.updateSong(server_id)
         else:
             return
@@ -429,9 +425,9 @@ class MusicPlayer(commands.Cog, name="music"):
                 audio_stream = yt.streams.filter(only_audio=True).first()
                 url2 = audio_stream.url
                 print(url2)
-                audio_path = audio_stream.download(output_path="audio", filename=video_id)
-
-                source = discord.FFmpegPCMAudio(audio_path)
+                #audio_path = audio_stream.download(output_path="audio", filename=video_id)
+                audio_path = None
+                source = discord.FFmpegPCMAudio(url2)
                 song = await self.createSong(title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source, audio_path)
                 for i, song_act in enumerate(self.queue[server_id]):
                     if song_act["title"] == title:
@@ -464,10 +460,6 @@ class MusicPlayer(commands.Cog, name="music"):
             await self.updateSong(server_id)
             if self.voice[server_id] is not None:
                 await self.voice[server_id].disconnect()
-                for archivo in os.listdir("audio"):
-                    archivo_path = os.path.join("audio", archivo)
-                    if os.path.isfile(archivo_path):
-                        os.remove(archivo_path)
                 self.voice[server_id] = None
 
     async def next_song(self, server_id, audio_path):
