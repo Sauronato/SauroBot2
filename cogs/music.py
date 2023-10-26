@@ -4,7 +4,8 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from youtube_search import YoutubeSearch 
 import youtube_dlc as youtube_dl
-
+from pytube import YouTube
+import os
 
 # Crear una extensión separada para el reproductor de música
 # Define una vista personalizada que contiene los botones
@@ -114,7 +115,7 @@ class MusicPlayer(commands.Cog, name="music"):
             if len(self.queue[server_id]) > 0:
                 play_channel = self.bot.get_channel(self.play_channel[server_id])
                 await self.bot.autodeleteMessage(play_channel, f"Saltando canción 🤸 - <@{interaction.user.id}>",5,0x3498DB)
-                await self.play_next(server_id)
+                await self.next_song(server_id, self.current_song[server_id]["audio_path"])
                 #self.is_running = not self.is_running
             else:
                 return
@@ -122,12 +123,17 @@ class MusicPlayer(commands.Cog, name="music"):
         if self.initializated == False:
             await self.initialize()
         if server_id in self.voice and self.voice[server_id] is not None:
+            self.voice[server_id].stop()
             await self.voice[server_id].disconnect()
             play_channel = self.bot.get_channel(self.play_channel[server_id])
             await self.bot.autodeleteMessage(play_channel, f"¡Bye! Me fui 🌬️ - <@{interaction.user.id}>")
             self.voice[server_id] = None
             self.queue[server_id].clear()
             self.current_song[server_id] = None
+            for archivo in os.listdir("audio"):
+                archivo_path = os.path.join("audio", archivo)
+                if os.path.isfile(archivo_path):
+                    os.remove(archivo_path)
             await self.updateSong(server_id)
         else:
             return
@@ -174,7 +180,7 @@ class MusicPlayer(commands.Cog, name="music"):
             "requested_by": "",
             "source": None,
         }
-    async def createSong(self,title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source):
+    async def createSong(self,title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source, audio_path):
         return {
             "title": title,
             "thumbnail_url": thumbnail_url,
@@ -185,6 +191,7 @@ class MusicPlayer(commands.Cog, name="music"):
             "song_url": video_url,
             "requested_by": requested_by,
             "source": source,
+            "audio_path": audio_path,
         }
 
     async def create_music_embed(self, current_song, playlist):
@@ -417,20 +424,15 @@ class MusicPlayer(commands.Cog, name="music"):
                 thumbnail_url = video_info["thumbnails"][0]
 
                 # Descargar y agregar a la lista de reproducción
-                ydl_opts = {
-                    'format': 'bestaudio/best',
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'opus',
-                        'preferredquality': '192',
-                    }],
-                }
-                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(video_url, download=False)
-                    url2 = info['url']
+                
+                yt = YouTube(video_url)
+                audio_stream = yt.streams.filter(only_audio=True).first()
+                url2 = audio_stream.url
+                print(url2)
+                audio_path = audio_stream.download(output_path="audio", filename=video_id)
 
-                source = discord.FFmpegPCMAudio(url2)
-                song = await self.createSong(title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source)
+                source = discord.FFmpegPCMAudio(audio_path)
+                song = await self.createSong(title, thumbnail_url, views, author, author_url, duration, video_url, requested_by, source, audio_path)
                 for i, song_act in enumerate(self.queue[server_id]):
                     if song_act["title"] == title:
 
@@ -448,18 +450,30 @@ class MusicPlayer(commands.Cog, name="music"):
         if self.initializated == False:
             await self.initialize()
         if len(self.queue[server_id]) > 0:
+            audio_path = None
+            if self.voice[server_id] is None:
+                audio_path = self.current_song[server_id]["audio_path"]
             song = self.queue[server_id][0]
             source = song["source"]
             self.current_song[server_id] = song
             await self.updateSong(server_id)
             self.queue[server_id].pop(0)
             if self.voice[server_id] is not None:
-                self.voice[server_id].play(source, after = lambda e: asyncio.run_coroutine_threadsafe(self.play_next(server_id), self.bot.loop))
+                self.voice[server_id].play(source, after = lambda e: asyncio.run_coroutine_threadsafe(self.next_song(server_id,audio_path), self.bot.loop))
         else:
             await self.updateSong(server_id)
             if self.voice[server_id] is not None:
                 await self.voice[server_id].disconnect()
+                for archivo in os.listdir("audio"):
+                    archivo_path = os.path.join("audio", archivo)
+                    if os.path.isfile(archivo_path):
+                        os.remove(archivo_path)
                 self.voice[server_id] = None
+
+    async def next_song(self, server_id, audio_path):
+            if audio_path is not None and os.path.exists(audio_path):
+                os.remove(audio_path)
+            await self.play_next(server_id)
 
 
     async def updateSong(self, server_id):

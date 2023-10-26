@@ -3,6 +3,6 @@ aiosqlite
 discord.py
 python-dotenv
 youtube_search
-youtube-dlc
+pytube 
 pynacl
 asyncio
