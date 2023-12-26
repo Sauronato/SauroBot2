@@ -6,3 +6,4 @@ youtube_search
 pytube 
 pynacl
 asyncio
+youtube_dlc
