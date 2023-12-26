@@ -17,8 +17,6 @@ WORKDIR /home/container/
 RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install -r requirements.txt
 
-RUN ls -la /home/container/
-RUN chmod +x /home/container/start_bot.sh
 
 # Etapa de ejecución
-CMD ["./start_bot.sh"]
+CMD ["python3", "start_bot.py"]
