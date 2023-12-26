@@ -18,7 +18,7 @@ RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install -r requirements.txt
 
 
-RUN chmod 644 .env bot.py
+RUN chmod 644 start_bot.sh
 
 # Etapa de ejecución
 CMD ["./start_bot.sh"]
