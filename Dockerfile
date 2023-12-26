@@ -18,5 +18,5 @@ RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install -r requirements.txt
 
 # Etapa de ejecución
-RUN chmod +x start_bot.sh
+RUN chmod +x /home/container/start_bot.sh
 CMD ["./start_bot.sh"]
