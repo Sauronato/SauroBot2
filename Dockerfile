@@ -1,5 +1,5 @@
 # Etapa de construcción
-FROM ubuntu:latest as builder
+FROM ubuntu:latest
 
 # Instala Git, FFmpeg y otras dependencias necesarias
 RUN apt-get update && \
@@ -18,7 +18,7 @@ RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install -r requirements.txt
 
 
-RUN chmod 644 start_bot.sh
+RUN chmod 644 ./start_bot.sh
 
 # Etapa de ejecución
 CMD ["./start_bot.sh"]
