@@ -5,13 +5,13 @@ FROM ubuntu:latest as builder
 RUN apt-get update && \
     apt-get install -y git ffmpeg python3 python3-pip
 
-RUN mkdir /home/bot/
+RUN mkdir /home/container/
 
 # Clona el repositorio de GitHub
-RUN git clone https://github.com/Sauronato/SauroBot2.git /home/bot/
+RUN git clone https://github.com/Sauronato/SauroBot2.git /home/container/
 
 # Cambia al directorio del repositorio
-WORKDIR /home/bot/
+WORKDIR /home/container/
 
 # Instala los requisitos
 RUN python3 -m pip install --upgrade pip && \
