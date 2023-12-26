@@ -17,5 +17,10 @@ WORKDIR /home/container/
 RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install -r requirements.txt
 
+COPY .env .
+COPY bot.py .
+
+RUN chmod 644 .env bot.py
+
 # Etapa de ejecución
 CMD ["./start_bot.sh"]
