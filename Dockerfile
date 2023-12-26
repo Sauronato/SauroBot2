@@ -7,10 +7,10 @@ RUN apt-get update && \
 
 
 # Clona el repositorio de GitHub
-RUN git clone https://github.com/Sauronato/SauroBot2.git /ruta/del/repositorio
+RUN git clone https://github.com/Sauronato/SauroBot2.git /home/container
 
 # Cambia al directorio del repositorio
-WORKDIR /ruta/del/repositorio
+WORKDIR /home/container
 
 # Instala los requisitos
 RUN python3 -m pip install --upgrade pip && \
